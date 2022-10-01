@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../json-server"
+		},
+		{
+			"path": "../Roadmapper-Backend"
+		}
+	],
+	"settings": {}
+}

@@ -1,13 +1,14 @@
 import type { NextPage } from "next";
 import Head from "next/head";
-import Link from "next/link";
-import { ReactFlowProvider } from "react-flow-renderer";
 import { RecoilRoot } from "recoil";
 import Body from "../components/Body";
+import Card from "../components/Card";
 import Header from "../components/Header";
-import RoadmapNodeTree from "../components/RoadmapNodeTree";
+import RekiteiCard from "../components/RekiteiCard";
 
-const Home: NextPage = () => {
+const CardsList = ["React", "Vue", "TypeScript", "React"];
+
+const List: NextPage = () => {
   return (
     <div>
       <Head>
@@ -23,10 +24,17 @@ const Home: NextPage = () => {
           <Header />
           <Body>
             <div className="flex flex-col w-full h-full p-2">
-              <h1 className="text-4xl font-bold">React</h1>
-              <ReactFlowProvider>
-                <RoadmapNodeTree />
-              </ReactFlowProvider>
+              <h1 className="text-4xl font-bold">Tree List</h1>
+              <div className="flex gap-1">
+                {CardsList.map((card) => {
+                  return <Card key={card} data={card} />;
+                })}
+              </div>
+              <div className="grid grid-cols-3 gap-8 p-4 place-items-center">
+                {CardsList.map((_) => (
+                  <RekiteiCard key={_} />
+                ))}
+              </div>
             </div>
           </Body>
         </div>
@@ -35,4 +43,4 @@ const Home: NextPage = () => {
   );
 };
 
-export default Home;
+export default List;
