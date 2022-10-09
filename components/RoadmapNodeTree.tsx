@@ -10,6 +10,7 @@ import ReactFlow, {
   EdgeChange,
   NodeChange,
   useViewport,
+  useReactFlow,
 } from "react-flow-renderer";
 import { useRecoilState } from "recoil";
 import { nodeState, edgeState } from "../atom";
@@ -17,6 +18,7 @@ import { NodeDataTypes } from "../Types";
 import NodeDescription from "./NodeDescription";
 import NodeEditPanel from "./NodeEditPanel";
 import RoadmapNode from "./RoadmapNode";
+import domtoimage from "dom-to-image"
 
 const nodeTypes = {
   customNode: RoadmapNode,
@@ -32,13 +34,9 @@ const EDGEURL = "http://localhost:3002/edge/";
 const RoadmapNodeTree: React.FC = () => {
   const [nodes, setNodes] = useRecoilState<Node[]>(nodeState);
   const [edges, setEdges] = useRecoilState<Edge[]>(edgeState);
-  const [nodePost, setNodePost] = useState<any>(null);
-  const [edgePost, setEdgePost] = useState<any>(null);
-  const [nodeDescription, setNodeDescription] = useState<Node>();
   const { x, y, zoom } = useViewport();
-  const urlRef = useRef({ url: "", title: "", image: "", description: "" });
   const [selectedNode, setSelectedNode] = useState<NodeDataTypes | null>(null);
-  const edgeSourceTarget = useRef({ source: "", target: "" });
+  const reactFlowInstance = useReactFlow();
   const onNodesChange = useCallback(
     (changes: NodeChange[]) =>
       setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -64,68 +62,26 @@ const RoadmapNodeTree: React.FC = () => {
       deleteSelectedNode
     );
   };
-  const getNodePosition = (node: NodeDataTypes | null): Node => {
-    console.log(nodes.filter((val) => val.data === node)[0])
-    return nodes.filter((val) => val.data === node)[0];
-  };
+  const capturePages = async () => {
+    const getElement = () => new Promise((resolve, reject) => {
+      reactFlowInstance.setViewport({ x: 0, y: 0, zoom: 1 });
+      setTimeout(() => resolve(1), 1)
+    })
+    const a = await getElement();
+    const element = document.querySelector('#capture');
+    console.log(element)
+    if (!element) return;
+    domtoimage.toSvg(element).then((canvas) => {
+      console.log(canvas)
+      const link = document.createElement('a')
+      link.href = canvas;
+      link.download = `export_image.svg`
+      link.click()
+    })
+  }
 
-  const addNode = (data: NodeDataTypes) => {
-    setNodes((nds) => {
-      const clickedNode = nds.filter((val) => val.data === data);
-      const id = String(new Date().getTime());
-      const newNode = {
-        id: id,
-        data: {
-          id: id,
-          text: "bb",
-          url: urlRef.current.url,
-          title: urlRef.current.title,
-          image: urlRef.current.image,
-          description: urlRef.current.description,
-          onButtonClick: (data2: NodeDataTypes) => setSelectedNode(data2),
-        },
-        type: "customNode",
-        position: {
-          x: clickedNode[0].position.x,
-          y: clickedNode[0].position.y + 200,
-        },
-        dragHandle: ".draggable",
-      };
-      console.log(newNode);
-      setNodePost(newNode);
-
-      edgeSourceTarget.current = {
-        source: clickedNode[0].id,
-        target: newNode.id,
-      };
-      return nds.concat(newNode);
-    });
-    setEdges((eds) => {
-      const newEdge = {
-        id:
-          "e" +
-          edgeSourceTarget.current.source +
-          "-" +
-          edgeSourceTarget.current.target,
-        source: edgeSourceTarget.current.source,
-        target: edgeSourceTarget.current.target,
-        type: "default",
-      };
-      setEdgePost(newEdge);
-      return eds.concat(newEdge);
-    });
-  };
-  const handleFetchClick = (post: {
-    url: string;
-    title: string;
-    image: string;
-    description: string;
-  }) => {
-    urlRef.current = post;
-    if (!selectedNode) return;
-    addNode(selectedNode);
-    setSelectedNode(null);
-  };
+  const bottomNodePosition = String(nodes.map((node) => node.position.y + (node.height ?? 0))
+    .reduce((prev, current) => { return (current > prev ? current : prev) }, 0) * zoom + 100) + "px";
 
   useEffect(() => {
     const fetchNodes = async () => {
@@ -144,56 +100,24 @@ const RoadmapNodeTree: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!nodePost) return;
-    const postNodes = async () => {
-      const res = await axios.post(NODEURL, nodePost);
-      setNodePost(null);
-    };
-    postNodes();
-  }, [nodePost]);
-
-  useEffect(() => {
-    if (!edgePost) return;
-    const postEdges = async () => {
-      const res = await axios.post(EDGEURL, edgePost);
-      setEdgePost(null);
-    };
-    postEdges();
-  }, [edgePost]);
-  useEffect(() => {
     if (!selectedNode) return;
     const nodeData = nodes.map((node) => node.data);
     if (!nodeData.includes(selectedNode)) setSelectedNode(null);
   });
   return (
-    <div className="flex w-full h-full">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onNodeDragStop={onNodeDragStop}
-        nodeTypes={nodeTypes}
-      />
-      <div
-        style={{
-          display: selectedNode === null ? "none" : "block",
-          position: "absolute",
-          top: getNodePosition(selectedNode)?.position.y * zoom + y,
-          left:
-            WINDOW_WIDTH * 0.2 + getNodePosition(selectedNode)?.position.x * zoom +
-            x +
-            (NODEWIDTH - EDITPANELWIDTH) * 0.5 * zoom,
-          zIndex: "100",
-          backgroundColor: "white",
-        }}
-      >
-        <NodeEditPanel
-          onFetchClick={(data) => handleFetchClick(data)}
-          onDeleteClick={() => setSelectedNode(null)}
+    <div className={"flex w-full h-full"}>
+      <div className={"w-full"} style={{ height: bottomNodePosition }} id="capture">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onNodeDragStop={onNodeDragStop}
+          nodeTypes={nodeTypes}
         />
       </div>
+      <button className="" onClick={capturePages}>capture</button>
       <NodeDescription
         data={nodes.filter((node) => node.selected === true)[0]}
       />

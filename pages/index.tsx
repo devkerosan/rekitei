@@ -1,13 +1,25 @@
+import domtoimage from "dom-to-image";
 import type { NextPage } from "next";
 import Head from "next/head";
-import Link from "next/link";
 import { ReactFlowProvider } from "react-flow-renderer";
-import { RecoilRoot } from "recoil";
 import Body from "../components/Body";
 import Header from "../components/Header";
 import RoadmapNodeTree from "../components/RoadmapNodeTree";
+import { Node } from 'react-flow-renderer'
 
 const Home: NextPage = () => {
+  const capturePages = () => {
+    const element = document.querySelector('#capture');
+    console.log(element)
+    if (!element) return;
+    domtoimage.toSvg(element).then((canvas) => {
+      console.log(canvas)
+      const link = document.createElement('a')
+      link.href = canvas;
+      link.download = `export_image.svg`
+      link.click()
+    })
+  }
   return (
     <div>
       <Head>
@@ -18,19 +30,19 @@ const Home: NextPage = () => {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
       </Head>
 
-      <RecoilRoot>
-        <div className="flex flex-col w-screen h-screen items-center bg-gray-100">
-          <Header />
-          <Body>
-            <div className="flex flex-col w-full h-full p-2">
-              <h1 className="text-4xl font-bold">React</h1>
-              <ReactFlowProvider>
-                <RoadmapNodeTree />
-              </ReactFlowProvider>
-            </div>
-          </Body>
-        </div>
-      </RecoilRoot>
+
+      <div className={"flex flex-col w-screen min-h-screen items-center bg-gray-100"}>
+        <Header />
+        <Body>
+          <div className={"flex flex-col w-full h-full p-2"}>
+            <h1 className="text-4xl font-bold">React</h1>
+            <button onClick={capturePages}>capture</button>
+            <ReactFlowProvider>
+              <RoadmapNodeTree />
+            </ReactFlowProvider>
+          </div>
+        </Body>
+      </div>
     </div>
   );
 };

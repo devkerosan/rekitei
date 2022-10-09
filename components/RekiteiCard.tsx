@@ -5,7 +5,7 @@ const RekiteiCard: React.FC = () => {
     <div className="w-64 rounded-xl bg-gray-200 overflow-hidden">
       <Link href="/">
         <a>
-          <img src="/img/bubble-react.png" className="bg-white" />
+          <img src="/img/bubble-react.png" crossOrigin="anonymous" className="bg-white" />
         </a>
       </Link>
       <div className="p-2">

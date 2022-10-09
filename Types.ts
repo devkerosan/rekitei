@@ -32,3 +32,10 @@ export interface RekiteiCardTypes{
     bookmark: boolean;
 
 }
+
+export interface NewPostData {
+    url: string;
+    title: string;
+    image: string;
+    description: string;
+}
